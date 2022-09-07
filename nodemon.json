@@ -1,0 +1,9 @@
+{
+  "events" : {
+    "restart": "npm run lint"
+  },
+  "watch" : [
+    "./build"
+  ],
+  "legacyWatch": true
+}
