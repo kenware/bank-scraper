@@ -108,7 +108,6 @@ export default class Scraper {
           transactionEl = transactionElArray[1]
 
           logger.info(`${currentNumber} of ${lastNumber} transactions completed for ${data.type}......`)
-          nextPage = false
     
           if(currentNumber === lastNumber) {
             nextPage = false
