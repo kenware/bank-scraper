@@ -22,7 +22,7 @@ A node js service that scrape customer infomation
     MONGO_URL_TEST=<test mongo url>
     BANK_BASE_URL=https://bankof.okra.ng/login
     ```
-* start server with `npm run watch` or `npm run forever` 
+* start server with `npm run watch`.
 * Run test with `npm test`
 
 # API documentaion
@@ -51,7 +51,7 @@ Parameters
     npm run scrape --email=<email> --password=<password> --otp=<otp>
     ```
 
-* Step two: Formatt the scraped data. Start express server with this command. `npm run watch` or `npm run forever`. Grab the scraped data and make a POST request using form data. The API will process and formatt the scraped data and return an excel file(`xlsx`) as a response.
+* Step two: Formatt the scraped data. Start express server with this command. `npm run watch`. Grab the scraped data and make a POST request using form data. The API will process and formatt the scraped data and return an excel file(`xlsx`) as a response.
 
     ```
     REQUEST

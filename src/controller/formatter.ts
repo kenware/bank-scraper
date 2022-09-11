@@ -43,7 +43,7 @@ export default class Formatter extends BaseController{
     try{
        const { dataModels } = getWorkBookFile(req, 'save')
        for (const data of dataModels){
-          await CollectionRepository.saveALL(data, '')
+          await CollectionRepository.saveALL(data, req.body.password || '')
         }
         return Formatter.successHandler(req, res, 'Data save successfully', 200);
     }catch(err) {

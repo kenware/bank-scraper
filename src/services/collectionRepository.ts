@@ -17,10 +17,19 @@ export default class CollectionRepository {
    * @param {res} ctx.response
    */
   static async auth(data: IAuth, password: string): Promise<any> {
+    const { email, phone, bvn } = data;
     try{
+      const authExist = await AuthModel.findOne({
+        $or: [{email}, {phone}, {bvn}]
+      })
+    
+      if (authExist) {
+        return authExist
+      }
+    
       return await AuthModel.create({
         ...data,
-        password: bcrypt.hashSync(password, 10)
+        password: password? bcrypt.hashSync(password, 10): ''
       })
     }catch(err: any) {
       logger.info(err)
@@ -86,7 +95,7 @@ export default class CollectionRepository {
   */
    static async saveALL(data: any, password: string): Promise<any> {
     try{
-      const auth = await CollectionRepository.auth(data.auth, password)
+      const auth = await CollectionRepository.auth(data.auth, password);
       if(auth) {
         await CollectionRepository.customer(data.customer, auth._id)
         await CollectionRepository.accountTransaction(data.accounts, auth._id)
@@ -96,6 +105,7 @@ export default class CollectionRepository {
       return true
     }catch(err: any) {
       logger.info(err?.message)
+      console.log(err)
       throw err?.message || err
     }
   }
