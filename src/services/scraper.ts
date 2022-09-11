@@ -1,8 +1,9 @@
-import fs from 'fs';
+import XLSX from "xlsx";
 import * as puppeteer from 'puppeteer'
 
 import logger from '../utils/logger';
 import config from '../config'
+import { getWorkbook  } from "../utils/processWorkbook";
 
 export default class Scraper {
     /**
@@ -29,7 +30,8 @@ export default class Scraper {
 
       return page
     }catch(err: any) {
-      logger.info(err)
+      logger.info(err?.message)
+      throw err
     }
   }
 
@@ -53,10 +55,12 @@ export default class Scraper {
       const fullNameContentArray = fullNameContent.split(' ')
       customer.firstName = fullNameContentArray[fullNameContentArray.length - 2]
       customer.lastName = fullNameContentArray[fullNameContentArray.length - 1].slice(0, -1)
+      customer.bankName = await page.$eval('nav a h1.sr-only', elm =>  elm?.textContent);
       return customer
 
     }catch(err: any) {
-      logger.info(err)
+      logger.info(err?.message)
+      throw err
     }
   }
 
@@ -91,7 +95,7 @@ export default class Scraper {
               beneficiary: await page.evaluate(el => el?.textContent, tableRows[3]),
               sender: await page.evaluate(el => el?.textContent, tableRows[4]),
             }
-            if (data.type && data.amount){
+            if (transaction.type && transaction.amount){
               transactions.push(transaction);
             }
           }
@@ -104,6 +108,7 @@ export default class Scraper {
           transactionEl = transactionElArray[1]
 
           logger.info(`${currentNumber} of ${lastNumber} transactions completed for ${data.type}......`)
+          nextPage = false
     
           if(currentNumber === lastNumber) {
             nextPage = false
@@ -111,8 +116,28 @@ export default class Scraper {
         }
         return transactions
       }catch(err: any) {
-        console.log(err)
-        logger.info(err)
+        logger.info(err?.message)
+        throw err
+      }
+    }
+
+  /**
+  * @param {object} ctx
+  * @param {req} ctx.request
+  * @param {res} ctx.response
+  */
+     static async processData(data: any): Promise<any> {
+      const { email, phone, bvn, address, firstName, lastName,
+        accounts} = data
+      try{
+        const workbook = getWorkbook(
+          [{email, phone, bvn}],
+          [{firstName, lastName, address, uniqueAuthId: email}],
+          accounts.map(item => {return {...item, uniqueAuthId: email} }));
+        XLSX.writeFile(workbook, `scraped-data-${new Date()}.xlsx`)
+      }catch(err: any) {
+        logger.info(err?.message)
+        throw err
       }
     }
   
@@ -147,14 +172,14 @@ export default class Scraper {
             ledgerAamount: await page.evaluate(el => el.textContent, balances[1]),
           }
           const transactions = await Scraper.AccountTransaction(page, account, data)
+          let accountNumber = transactions?.find(trans => trans.type === 'debit')
+          accountNumber = accountNumber?.sender
           data.transactions = transactions
+          data.accountNumber = accountNumber
           accounts.push(data) 
         }
-        const callback = (data) => {
-          logger.info('Data successfully scraped')
-        }
-        customer.account = accounts
-        fs.writeFile(`scraped-data-${new Date()}.json`, JSON.stringify(customer), 'utf8', callback);
+        customer.accounts = accounts
+        await Scraper.processData(customer)
         const logoutElement = await page.$('nav div a.no-underline.font-bold')
         await logoutElement.click()
         browser.close()
@@ -162,7 +187,7 @@ export default class Scraper {
     }catch(err) {
       const errMessage = err.response?.data || err.message || "Error Occured";
       logger.info(errMessage);
-      return {}
+      throw err
     }
   }
 }

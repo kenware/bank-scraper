@@ -1,4 +1,5 @@
 import express from 'express';
+import fileUpload from 'express-fileupload';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
@@ -15,6 +16,10 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true,
+}));
+
+app.use(fileUpload({
+  useTempFiles: true,
 }));
 
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :response-time ms'));
